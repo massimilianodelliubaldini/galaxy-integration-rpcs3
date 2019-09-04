@@ -6,17 +6,18 @@ import subprocess
 from galaxy.api.plugin import Plugin, create_and_run_plugin
 from galaxy.api.consts import Platform, LocalGameState
 from galaxy.api.types import Game, LocalGame
+from version import __version__
 
 class RPCS3Plugin(Plugin):
     def __init__(self, reader, writer, token):
         super().__init__(
             Platform.Generic, # PS3 is not a supported platform yet.
-            __version__
+            __version__,
             reader,
             writer,
             token
         )
-
+        
     ### Authentication ###
         
     async def authenticate(self, stored_credentials=None):
@@ -28,7 +29,12 @@ class RPCS3Plugin(Plugin):
     ### Platform ###
 
     async def launch_platform_client(self):
-        pass
+
+        with open('config.json') as config_file:
+            config = json.load(config_file)
+            rpcs3_exe = config['rpcs3']['home'] + '/' + config['rpcs3']['exe']
+            info = subprocess.STARTUPINFO(dwFlags=1, wShowWindow=0)
+            subprocess.Popen(rpcs3_exe, startupinfo=info)
 
     async def shutdown_platform_client(self):
         pass

@@ -3,5 +3,16 @@
 	{
 		"home": "D:/Files/Repositories/rpcs3/bin",
 		"exe": "rpcs3.exe"
+	},
+	"user":
+	{
+		"home": "dev_hdd0/home",
+		"id": "00000001",
+		"namefile": "localusername"
+	},
+	"library":
+	{
+		"disc": "dev_hdd0/disc",
+		"psn": "dev_hdd0/game"
 	}
 }

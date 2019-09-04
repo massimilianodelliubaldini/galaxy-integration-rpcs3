@@ -1,3 +1,5 @@
 __pycache__
+galaxy/__pycache__
+tests/galaxy/__pycache__
 
 *.lnk
