@@ -1,0 +1,11 @@
+{
+    "name": "Galaxy RPCS3 Plugin",
+    "platform": "generic",
+    "guid": "80F9D16B-5D72-4B95-9D46-2A1EF417C1FC",
+    "version": "0.1",
+    "description": "GOG Galaxy Integration with RPCS3 Emulator",
+    "author": "mpm11011",
+    "email": "markuscicero5@gmail.com",
+    "url": "https://github.com/mpm11011/galaxy-integration-rpcs3",
+    "script": "plugin.py"
+}
