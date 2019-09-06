@@ -11,7 +11,7 @@ from version import __version__
 class RPCS3Plugin(Plugin):
     def __init__(self, reader, writer, token):
         super().__init__(
-            Platform.Generic, # PS3 is not a supported platform yet.
+            Platform.ColecoVision, # PS3 is not a supported platform yet.
             __version__,
             reader,
             writer,
