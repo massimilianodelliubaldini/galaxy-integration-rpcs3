@@ -2,17 +2,12 @@
 	"rpcs3":
 	{
 		"home": "D:/Files/Repositories/rpcs3/bin",
-		"exe": "rpcs3.exe"
+		"exe": "rpcs3.exe",
+		"games": "games.yml"
 	},
 	"user":
 	{
-		"home": "dev_hdd0/home",
-		"id": "00000001",
+		"home": "dev_hdd0/home/00000001",
 		"namefile": "localusername"
-	},
-	"library":
-	{
-		"disc": "dev_hdd0/disc",
-		"psn": "dev_hdd0/game"
 	}
 }
