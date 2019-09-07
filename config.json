@@ -9,5 +9,10 @@
 	{
 		"home": "dev_hdd0/home/00000001",
 		"namefile": "localusername"
+	},
+	"library":
+	{
+		"disc": "dev_hdd0/disc",
+		"game": "dev_hdd0/game"
 	}
 }
