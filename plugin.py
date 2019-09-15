@@ -6,7 +6,7 @@ import os
 
 from config import Config
 from backend import BackendClient
-from version import __version__
+from version import get_version
 from devita.sfo import sfo
 
 from galaxy.api.consts import LicenseType, LocalGameState, Platform
@@ -16,7 +16,7 @@ from galaxy.api.types import Authentication, Game, GameTime, LicenseInfo, LocalG
 
 class RPCS3Plugin(Plugin):
     def __init__(self, reader, writer, token):
-        super().__init__(Platform.ColecoVision, __version__, reader, writer, token)
+        super().__init__(Platform.ColecoVision, get_version(), reader, writer, token)
         self.config = Config()
         self.backend_client = BackendClient(self.config)
         self.games = []
