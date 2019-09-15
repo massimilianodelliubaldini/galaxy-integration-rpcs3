@@ -7,7 +7,9 @@
 
 ## Installation
 
-1. Clone or Download this repository to %LOCALAPPDATA%\GOG.com\Galaxy\plugins\installed.
+1. Clone or Download this repository to:
+* Windows: `%localappdata%\GOG.com\Galaxy\plugins\installed`
+* macOS: `~/Library/Application Support/GOG.com/Galaxy/plugins/installed`
 
 2. Rename the folder from "galaxy-integration-rpcs3" to "rpcs3_80F9D16B-5D72-4B95-9D46-2A1EF417C1FC".
 
