@@ -28,22 +28,24 @@ class RPCS3Plugin(Plugin):
 
     def get_game_path(self, game_id):
 
-        for search_dir in config.game_paths:
-            games_dir = self.config2path(config.main_directory, search_dir)
+        for search in config.game_paths:
+            search_dir = self.config2path(config.main_directory, search)
 
-            for game in os.listdir(games_dir):
-                game_dir = os.path.join(games_dir, game)
+            for game in os.listdir(search_dir):
+                game_dir = os.path.join(search_dir, game)
 
                 # Extra folder here.
-                if 'disc' in search_dir:
+                if 'disc' in search:
                     game_dir = os.path.join(game_dir, 'PS3_GAME')
 
-                param_sfo = sfo(os.path.join(game_dir, 'PARAM.SFO'))
+                sfo_path = os.path.join(game_dir, 'PARAM.SFO')
+                if os.path.exists(sfo_path):
+                    param_sfo = sfo(sfo_path)
 
-                # PARAM.SFO is read as a binary file,
-                # so all keys must also be in binary.
-                if bytes(game_id, 'utf-8') in param_sfo.params[bytes('TITLE_ID', 'utf-8')]:
-                    return game_dir
+                    # PARAM.SFO is read as a binary file,
+                    # so all keys must also be in binary.
+                    if bytes(game_id, 'utf-8') in param_sfo.params[bytes('TITLE_ID', 'utf-8')]:
+                        return game_dir
 
 
     async def authenticate(self, stored_credentials=None):
