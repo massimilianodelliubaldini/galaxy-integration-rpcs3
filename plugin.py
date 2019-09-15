@@ -1,150 +1,195 @@
-import sys
-import os
+import asyncio
 import json
 import subprocess
-import re
-import requests
+import sys
+import os
 
-from galaxy.api.plugin import Plugin, create_and_run_plugin
-from galaxy.api.consts import Platform, LocalGameState
-from galaxy.api.types import Game, LocalGame
+import config
+from backend import BackendClient
 from version import __version__
+from devita.sfo import sfo
+
+from galaxy.api.consts import LicenseType, LocalGameState, Platform
+from galaxy.api.plugin import Plugin, create_and_run_plugin
+from galaxy.api.types import Authentication, Game, GameTime, LicenseInfo, LocalGame
+
 
 class RPCS3Plugin(Plugin):
     def __init__(self, reader, writer, token):
-        super().__init__(
-            Platform.ColecoVision, # PS3 is not a supported platform yet.
-            __version__,
-            reader,
-            writer,
-            token)
+        super().__init__(Platform.ColecoVision, __version__, reader, writer, token)
+        self.backend_client = BackendClient()
+        self.games = []
+        self.local_games_cache = self.local_games_list()
 
-    def tick(self):
-        pass
-        
-    ### Authentication ###
-        
+
+    def config2path(self, path, *paths):
+        return os.path.normpath(os.path.join(path, *paths))
+
+
+    def get_game_path(self, game_id):
+
+        for search_dir in config.game_paths:
+            games_dir = self.config2path(config.main_directory, search_dir)
+
+            for game in os.listdir(games_dir):
+                game_dir = os.path.join(games_dir, game)
+
+                # Extra folder here.
+                if 'disc' in search_dir:
+                    game_dir = os.path.join(game_dir, 'PS3_GAME')
+
+                param_sfo = sfo(os.path.join(game_dir, 'PARAM.SFO'))
+
+                # PARAM.SFO is read as a binary file,
+                # so all keys must also be in binary.
+                if bytes(game_id, 'utf-8') in param_sfo.params[bytes('TITLE_ID', 'utf-8')]:
+                    return game_dir
+
+
     async def authenticate(self, stored_credentials=None):
-        return self.handle_auth()
+        return self.do_auth()
+
 
     async def pass_login_credentials(self, step, credentials, cookies):
-        return self.handle_auth()
+        return self.do_auth()
 
-    def handle_auth(self):
 
-        with open('config.json') as config_file:
-            config = json.load(config_file)
+    def do_auth(self):
 
-        username_filename = json2path(
-            config['rpcs3']['home'], 
-            config['user']['home'], 
-            config['user']['namefile'])
+        user_path = self.config2path(
+            config.main_directory, 
+            config.user_path)
 
-        with open(username_filename) as username_file:
+        username = ''
+        with open(user_path) as username_file:
             username = username_file.read()
 
         user_data = {}
-        user_data["username"] = username
+        user_data['username'] = username
         self.store_credentials(user_data)
-        return Authentication("rpcs3_user", user_data["username"])
+        return Authentication('rpcs3_user', user_data['username'])
 
-    ### Library Management ###
-
-    async def get_local_games(self):
-
-        url = 'https://rpcs3.net/compatibility?api=v1&g='
-        owned_games = []
-
-        with open('config.json') as config_file:
-            config = json.load(config_file)
-
-        games_filename = json2path(
-            config['rpcs3']['home'], 
-            config['rpcs3']['games'])
-
-        with open(games_filename) as games_file: 
-            game_ids = re.findall('\w+(?=: .*)', games_file.read())
-
-
-        for game_id in game_ids:
-            page = requests.get(url + game_id)
-            game = json.loads(page.text)['results'][game_id]
-
-            owned_games.append(Game(
-                game_id, 
-                game['title'], 
-                None, 
-                LicenseInfo(LicenseType.SinglePurchase, None)))
-
-        return owned_games
-
-    async def get_owned_games(self):
-        return self.get_local_games()
-
-    ### Game Management ###
 
     async def launch_game(self, game_id):
 
-        with open('config.json') as config_file:
-            config = json.load(config_file)
-
-        rpcs3_exe = json2path(
-            config['rpcs3']['home'], 
-            config['rpcs3']['exe'])
+        rpcs3_exe = self.config2path(
+            config.main_directory,
+            config.exe_path)
 
         eboot_bin = os.path.join(
-            get_game_path(game_id), 
-            'PS3_GAME', 
+            self.get_game_path(game_id),
             'USRDIR', 
             'EBOOT.BIN')
 
         subprocess.Popen([rpcs3_exe, eboot_bin])
         return
 
+
+    # Only as placeholders so the feature is recognized
     async def install_game(self, game_id):
         pass
 
     async def uninstall_game(self, game_id):
         pass
 
+
+    async def prepare_game_times_context(self, game_ids):
+        return self.get_games_times_dict()
+
+
     async def get_game_time(self, game_id, context):
         game_time = context.get(game_id)
         return game_time
 
-    ### Trophies ###
 
-    async def get_unlocked_achievements(self, game_id, context):
-        return
+    def get_games_times_dict(self):
 
-    ### Helpers and Miscellaneous ###
+        # Get the directory of this file and format it to
+        # have the path to the game times file
+        base_dir = os.path.dirname(os.path.realpath(__file__))
+        game_times_path = '{}/game_times.json'.format(base_dir)
 
-    def json2path(path, *paths):
-        return os.path.normpath(os.path.join(path, *paths))
+        # Check if the file exists
+        # If not create it with the default value of 0 minutes played
+        if not os.path.exists(game_times_path):
+            game_times_dict = {}
+            for game in self.games:
+                entry = {}
+                id = str(game[0])
+                entry['name'] = game[1]
+                entry['time_played'] = 0
+                entry['last_time_played'] = 0
+                game_times_dict[id] = entry
 
-    def get_game_path(game_id):
+            with open(game_times_path, 'w') as game_times_file:
+                json.dump(game_times_dict, game_times_file, indent=4)
 
-        game_path = ''
-        with open('config.json') as config_file:
-            config = json.load(config_file)
+        # Once the file exists read it and return the game times    
+        game_times = {}
 
-        disc_games = json2path(
-            config['rpcs3']['home'],
-            config['library']['disc'])
+        with open(game_times_path, 'r') as game_times_file:
+            parsed_game_times_file = json.load(game_times_file)
 
-        for d in os.listdir(disc_games):
-            disc_dir = os.path.join(disc_games, d)
-            param_sfo = os.path.join(disc_dir, 'PS3_GAME', 'PARAM.SFO')
+            for entry in parsed_game_times_file:
+                game_id = entry
+                time_played = int(parsed_game_times_file.get(entry).get('time_played'))
+                last_time_played = int(parsed_game_times_file.get(entry).get('last_time_played'))
+                
+                game_times[game_id] = GameTime(
+                    game_id,
+                    time_played,
+                    last_time_played)
 
-            with open(param_sfo) as param_file:
-                if game_id in param_file:
-                    game_path = disc_dir
+        return game_times
 
-        return game_path
+
+    def local_games_list(self):
+        local_games = []
+
+        for game in self.games:
+            local_games.append(LocalGame(
+                game[0],
+                LocalGameState.Installed))
+
+        return local_games
+
+
+    def tick(self):
+
+        async def update_local_games():
+            loop = asyncio.get_running_loop()
+            new_local_games_list = await loop.run_in_executor(None, self.local_games_list)
+            notify_list = self.backend_client.get_state_changes(self.local_games_cache, new_local_games_list)
+            self.local_games_cache = new_local_games_list
+            
+            for local_game_notify in notify_list:
+                self.update_local_game_status(local_game_notify)
+
+        asyncio.create_task(update_local_games())
+
+
+    async def get_owned_games(self):
+        self.games = self.backend_client.get_games()
+        owned_games = []
+        
+        for game in self.games:
+            owned_games.append(Game(
+                game[0],
+                game[1],
+                None,
+                LicenseInfo(LicenseType.SinglePurchase, None)))
+            
+        return owned_games
+
+
+    async def get_local_games(self):
+        return self.local_games_cache
 
 
 def main():
     create_and_run_plugin(RPCS3Plugin, sys.argv)
 
+
 # run plugin event loop
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

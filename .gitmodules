@@ -1,0 +1,3 @@
+[submodule "devita"]
+	path = devita
+	url = https://github.com/mpm11011/devita.git

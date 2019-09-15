@@ -1,5 +1,5 @@
 __pycache__
-galaxy/__pycache__
-tests/galaxy/__pycache__
+*/__pycache__
 
 *.lnk
+game_times.json
