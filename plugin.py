@@ -37,6 +37,7 @@ class RPCS3Plugin(Plugin):
                 if 'disc' in search:
                     game_dir = os.path.join(game_dir, 'PS3_GAME')
 
+                # Check that PARAM.SFO exists before loading it.
                 sfo_path = os.path.join(game_dir, 'PARAM.SFO')
                 if os.path.exists(sfo_path):
                     param_sfo = sfo(sfo_path)

@@ -10,6 +10,7 @@ class BackendClient:
         self.config = config
 
 
+    # Returns an array of Title ID, Title pairs.
     def get_games(self):
 
         # May still be useful if more info on a game is needed.
