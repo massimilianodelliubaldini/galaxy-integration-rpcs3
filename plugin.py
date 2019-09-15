@@ -4,7 +4,7 @@ import subprocess
 import sys
 import os
 
-import config
+from config import Config
 from backend import BackendClient
 from version import __version__
 from devita.sfo import sfo
@@ -17,19 +17,18 @@ from galaxy.api.types import Authentication, Game, GameTime, LicenseInfo, LocalG
 class RPCS3Plugin(Plugin):
     def __init__(self, reader, writer, token):
         super().__init__(Platform.ColecoVision, __version__, reader, writer, token)
-        self.backend_client = BackendClient()
+        self.config = Config()
+        self.backend_client = BackendClient(self.config)
         self.games = []
         self.local_games_cache = self.local_games_list()
 
 
-    def config2path(self, path, *paths):
-        return os.path.normpath(os.path.join(path, *paths))
-
-
     def get_game_path(self, game_id):
 
-        for search in config.game_paths:
-            search_dir = self.config2path(config.main_directory, search)
+        for search in self.config.game_paths:
+            search_dir = self.config.config2path(
+                self.config.main_directory, 
+                search)
 
             for game in os.listdir(search_dir):
                 game_dir = os.path.join(search_dir, game)
@@ -58,9 +57,9 @@ class RPCS3Plugin(Plugin):
 
     def do_auth(self):
 
-        user_path = self.config2path(
-            config.main_directory, 
-            config.user_path)
+        user_path = self.config.config2path(
+            self.config.main_directory, 
+            self.config.user_path)
 
         username = ''
         with open(user_path) as username_file:
@@ -74,9 +73,9 @@ class RPCS3Plugin(Plugin):
 
     async def launch_game(self, game_id):
 
-        rpcs3_exe = self.config2path(
-            config.main_directory,
-            config.exe_path)
+        rpcs3_exe = self.config.config2path(
+            self.config.main_directory,
+            self.config.exe_path)
 
         eboot_bin = os.path.join(
             self.get_game_path(game_id),

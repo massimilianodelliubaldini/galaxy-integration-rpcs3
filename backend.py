@@ -2,29 +2,34 @@ import json
 import os
 import sys
 
-import config
+from config import Config
 from devita.sfo import sfo
 
 class BackendClient:
-    def __init__(self):
-        pass
+    def __init__(self, config):
+        self.config = config
 
-    def config2path(self, path, *paths):
-        return os.path.normpath(os.path.join(path, *paths))
 
     def get_games(self):
+
+        # May still be useful if more info on a game is needed.
         # url = 'https://rpcs3.net/compatibility?api=v1&g='
+
         results = []
 
-        for search_path in config.game_paths:
-            game_path = self.config2path(config.main_directory, search_path)
+        for search in self.config.game_paths:
+            search_dir = self.config.config2path(
+                self.config.main_directory, 
+                search)
 
-            for root, dirs, files in os.walk(game_path):
+            for root, dirs, files in os.walk(search_dir):
                 for file in files:
                     if file == 'EBOOT.BIN':
 
-                        bottom_path = os.path.join(root, file)
-                        sfo_path = bottom_path.replace(
+                        # Search for EBOOT.BIN to find actual games,
+                        # then PARAM.SFO is one level up from EBOOT.BIN.
+                        bin_path = os.path.join(root, file)
+                        sfo_path = bin_path.replace(
                             os.path.join('USRDIR', 'EBOOT.BIN'), 
                             'PARAM.SFO')
 
@@ -34,6 +39,7 @@ class BackendClient:
                         title_id = param_sfo.params[bytes('TITLE_ID', 'utf-8')]
                         title = param_sfo.params[bytes('TITLE', 'utf-8')]
 
+                        # Convert results to strings before return.
                         results.append([
                             str(title_id, 'utf-8'), 
                             str(title, 'utf-8')])
