@@ -15,7 +15,11 @@
 
 ## Configuration
 
-1. Open "config.py" and set the "main_directory" variable to your RPCS3 installation folder. Use single forward slashes only. No other variables need to be modified.
+1. Open "config.py" 
+
+* Set the "main_directory" variable to your RPCS3 installation folder. Use single forward slashes only. No other directories need to be modified.
+
+* If some games don't launch from Galaxy, try setting "no_gui" to "False". Some games don't work yet with no GUI in RPCS3.
 
 2. Game-specific launch configuration is handled by RPCS3.
 

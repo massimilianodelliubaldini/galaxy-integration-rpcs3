@@ -12,6 +12,11 @@ class Config:
         self.game_paths = ['dev_hdd0/disc', 'dev_hdd0/game']
         self.user_path = 'dev_hdd0/home/00000001/localusername'
 
+        # Launch without the main RPCS3 window.
+        # Turn this off if launching a game through Galaxy does nothing,
+        # as some games don't work without the main window. 
+        self.no_gui = True
+
     # Normalizes and joins paths from config.
     def config2path(self, path, *paths):
         return os.path.normpath(os.path.join(path, *paths))

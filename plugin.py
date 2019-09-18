@@ -74,6 +74,8 @@ class RPCS3Plugin(Plugin):
 
     async def launch_game(self, game_id):
 
+        params = []
+
         rpcs3_exe = self.config.config2path(
             self.config.main_directory,
             self.config.exe_path)
@@ -83,7 +85,12 @@ class RPCS3Plugin(Plugin):
             'USRDIR', 
             'EBOOT.BIN')
 
-        subprocess.Popen([rpcs3_exe, eboot_bin])
+        if self.config.no_gui:
+            params.append('--no-gui')
+
+        command = [rpcs3_exe, eboot_bin] + params
+        process = subprocess.Popen(command)
+
         return
 
 
