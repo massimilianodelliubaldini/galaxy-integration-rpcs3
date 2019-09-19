@@ -11,15 +11,20 @@
 * Windows: `%localappdata%\GOG.com\Galaxy\plugins\installed`
 * macOS: `~/Library/Application Support/GOG.com/Galaxy/plugins/installed`
 
-2. Rename the folder from "galaxy-integration-rpcs3" to "rpcs3_80F9D16B-5D72-4B95-9D46-2A1EF417C1FC".
+2. Rename the folder from `galaxy-integration-rpcs3` to `rpcs3_80F9D16B-5D72-4B95-9D46-2A1EF417C1FC`.
 
 ## Configuration
 
-1. Open "config.py" 
+1. Open `config.py` 
 
-* Set the "main_directory" variable to your RPCS3 installation folder. Use single forward slashes only. No other directories need to be modified.
+* Set the `main_directory` variable to your RPCS3 installation folder. Use single forward slashes only. No other directories need to be modified.
 
-* If some games don't launch from Galaxy, try setting "no_gui" to "False". Some games don't work yet with no GUI in RPCS3.
+* If some games don't launch from Galaxy, try setting `no_gui` to `False`. Some games don't work yet with no GUI in RPCS3.
 
 2. Game-specific launch configuration is handled by RPCS3.
 
+## Acknowledgements
+
+[AHCoder](https://github.com/AHCoder) - Use of the [PS2 Galaxy plugin](https://github.com/AHCoder/galaxy-integration-ps2) as the basis for this plugin.
+
+[GOG](https://github.com/gogcom) - Use of the [API](https://github.com/gogcom/galaxy-integrations-python-api) provided by GOG.
