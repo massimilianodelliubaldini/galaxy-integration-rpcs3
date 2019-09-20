@@ -3,6 +3,7 @@ import json
 import subprocess
 import sys
 import os
+import time
 
 from config import Config
 from backend import BackendClient
@@ -21,6 +22,8 @@ class RPCS3Plugin(Plugin):
         self.backend_client = BackendClient(self.config)
         self.games = []
         self.local_games_cache = self.local_games_list()
+        self.process = None
+        self.running_game_id = None
 
 
     def get_game_path(self, game_id):
@@ -74,7 +77,7 @@ class RPCS3Plugin(Plugin):
 
     async def launch_game(self, game_id):
 
-        params = []
+        args = []
 
         rpcs3_exe = self.config.config2path(
             self.config.main_directory,
@@ -86,10 +89,12 @@ class RPCS3Plugin(Plugin):
             'EBOOT.BIN')
 
         if self.config.no_gui:
-            params.append('--no-gui')
+            args.append('--no-gui')
 
-        command = [rpcs3_exe, eboot_bin] + params
-        process = subprocess.Popen(command)
+        command = [rpcs3_exe, eboot_bin] + args
+        self.process = subprocess.Popen(command)
+        self.backend_client.start_game_time()
+        self.running_game_id = game_id
 
         return
 
@@ -103,7 +108,7 @@ class RPCS3Plugin(Plugin):
 
 
     async def prepare_game_times_context(self, game_ids):
-        return self.get_games_times_dict()
+        return self.get_game_times()
 
 
     async def get_game_time(self, game_id, context):
@@ -111,43 +116,41 @@ class RPCS3Plugin(Plugin):
         return game_time
 
 
-    def get_games_times_dict(self):
+    def get_game_times(self):
 
-        # Get the directory of this file and format it to
-        # have the path to the game times file
-        base_dir = os.path.dirname(os.path.realpath(__file__))
-        game_times_path = '{}/game_times.json'.format(base_dir)
-
-        # Check if the file exists
-        # If not create it with the default value of 0 minutes played
-        if not os.path.exists(game_times_path):
-            game_times_dict = {}
-            for game in self.games:
-                entry = {}
-                id = str(game[0])
-                entry['name'] = game[1]
-                entry['time_played'] = 0
-                entry['last_time_played'] = 0
-                game_times_dict[id] = entry
-
-            with open(game_times_path, 'w') as game_times_file:
-                json.dump(game_times_dict, game_times_file, indent=4)
-
-        # Once the file exists read it and return the game times    
+        # Get the path of the game times file.
+        base_path = os.path.dirname(os.path.realpath(__file__))
+        game_times_path = '{}/game_times.json'.format(base_path)
         game_times = {}
 
-        with open(game_times_path, 'r') as game_times_file:
-            parsed_game_times_file = json.load(game_times_file)
+        # If the file does not exist, create it with default values.
+        if not os.path.exists(game_times_path):
+            for game in self.games:
 
-            for entry in parsed_game_times_file:
-                game_id = entry
-                time_played = int(parsed_game_times_file.get(entry).get('time_played'))
-                last_time_played = int(parsed_game_times_file.get(entry).get('last_time_played'))
+                game_time = {}
+                game_id = str(game[0])
+                game_time['name'] = game[1]
+                game_time['time_played'] = 0
+                game_time['last_time_played'] = None
+
+                game_times[game_id] = game_time
+
+            with open(game_times_path, 'w', encoding='utf-8') as game_times_file:
+                json.dump(game_times, game_times_file, indent=4)
+
+        # If (when) the file exists, read it and return the game times.  
+        with open(game_times_path, 'r', encoding='utf-8') as game_times_file:
+            game_times_json = json.load(game_times_file)
+
+            for game_time in game_times_json:
+
+                # Each entry is actually the game ID.
+                game_id = game_time
+
+                time_played = game_times_json.get(game_time).get('time_played')
+                last_time_played = game_times_json.get(game_time).get('last_time_played')
                 
-                game_times[game_id] = GameTime(
-                    game_id,
-                    time_played,
-                    last_time_played)
+                game_times[game_id] = GameTime(game_id, time_played, last_time_played)
 
         return game_times
 
@@ -164,17 +167,68 @@ class RPCS3Plugin(Plugin):
 
 
     def tick(self):
+        try:
+            if self.process.poll() is not None:
 
-        async def update_local_games():
-            loop = asyncio.get_running_loop()
-            new_local_games_list = await loop.run_in_executor(None, self.local_games_list)
-            notify_list = self.backend_client.get_state_changes(self.local_games_cache, new_local_games_list)
-            self.local_games_cache = new_local_games_list
-            
-            for local_game_notify in notify_list:
-                self.update_local_game_status(local_game_notify)
+                self.backend_client.end_game_time()
+                self.update_json_game_time(
+                    self.running_game_id,
+                    self.backend_client.get_session_duration(),
+                    int(time.time()))
 
-        asyncio.create_task(update_local_games())
+                self.process = None
+                self.running_game_id = None
+
+        except AttributeError:
+            pass
+
+        self.create_task(self.update_galaxy_game_times(), 'Update Galaxy game times')
+        self.create_task(self.update_local_games(), 'Update local games')
+
+
+    async def update_local_games(self):
+        loop = asyncio.get_running_loop()
+
+        new_list = await loop.run_in_executor(None, self.local_games_list)
+        notify_list = self.backend_client.get_state_changes(self.local_games_cache, new_list)
+        self.local_games_cache = new_list
+        
+        for local_game_notify in notify_list:
+            self.update_local_game_status(local_game_notify)
+
+
+    async def update_galaxy_game_times(self):
+
+        # Leave time for Galaxy to fetch games before updating times
+        await asyncio.sleep(60) 
+        loop = asyncio.get_running_loop()
+
+        game_times = await loop.run_in_executor(None, self.get_game_times)
+        for game_time in game_times:
+            self.update_game_time(game_time)
+
+
+    def update_json_game_time(self, game_id, duration, last_time_played):
+
+        # Get the path of the game times file.
+        base_path = os.path.dirname(os.path.realpath(__file__))
+        game_times_path = '{}/game_times.json'.format(base_path)
+        game_times_json = None
+
+        with open(game_times_path, 'r', encoding='utf-8') as game_times_file:
+            game_times_json = json.load(game_times_file)
+
+        old_time_played = game_times_json.get(game_id).get('time_played')
+
+        new_time_played = old_time_played + duration
+
+        game_times_json[game_id]['time_played'] = new_time_played
+        game_times_json[game_id]['last_time_played'] = last_time_played
+
+        with open(game_times_path, 'w', encoding='utf-8') as game_times_file:
+            json.dump(game_times_json, game_times_file, indent=4)
+
+        self.update_game_time(GameTime(game_id, new_time_played, last_time_played))
 
 
     async def get_owned_games(self):

@@ -27,4 +27,6 @@
 
 [AHCoder](https://github.com/AHCoder) - Use of the [PS2 Galaxy plugin](https://github.com/AHCoder/galaxy-integration-ps2) as the basis for this plugin.
 
-[GOG](https://github.com/gogcom) - Use of the [API](https://github.com/gogcom/galaxy-integrations-python-api) provided by GOG.
+[GOG](https://github.com/gogcom) - Use of the [Galaxy Plugin API](https://github.com/gogcom/galaxy-integrations-python-api) provided by GOG.
+
+[Marshall Ward](https://github.com/marshallward) - Use of the [SFO Python library](https://github.com/marshallward/devita) to open and read PARAM.SFO files.
