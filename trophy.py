@@ -15,6 +15,7 @@ class TropConf:
 
 
 # This metaclass allows us to call 'len(TropUsrHeader)' and get '48'.
+# Useful for substringing TROPUSR.DAT.
 class TropMetaclass(type):
     def __len__(self):
         total = 0
@@ -136,21 +137,22 @@ class TropUsr:
 
     def load(self) -> bool:
 
-        # TODO - Generate if none exists.
+        # TODO - Generate if none exists. Is this necessary?
 
         if not self.file:
+            raise FileNotFoundError(self.path + ' file not found.')
             return False
 
         if not self.load_header(): 
-            raise UnknownError('Error in load_header')
+            raise ValueError('Magic bytes not found in file header.')
             return False
 
         if not self.load_table_headers():
-            raise UnknownError('Error in load_table_headers')
+            raise ValueError('Unknown table type found in table header.')
             return False
 
         if not self.load_tables():
-            raise UnknownError('Error in load_tables')
+            raise ValueError('Error loading table entries.')
             return False
 
         return True
@@ -258,6 +260,7 @@ class Trophy:
             self.tropconf = TropConf(trophies_path)
             self.tropusr = TropUsr(trophies_path)
 
+        # File not found, etc.
         except:
             pass
 

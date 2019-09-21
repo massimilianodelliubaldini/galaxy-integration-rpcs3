@@ -5,8 +5,9 @@ import sys
 import os
 import time
 
-from config import Config
+import trophy
 from trophy import Trophy
+from config import Config
 from backend import BackendClient
 from version import get_version
 
@@ -88,7 +89,7 @@ class RPCS3Plugin(Plugin):
 
 
     async def prepare_achievements_context(self, game_ids):
-        return self.get_trophy_achs(game_ids)
+        return self.get_trophy_achs()
 
 
     async def get_game_time(self, game_id, context):
@@ -139,15 +140,19 @@ class RPCS3Plugin(Plugin):
 
         return game_times
 
-    def get_trophy_achs(self, game_ids):
+    def get_trophy_achs(self):
 
+        game_ids = []
+        for game in self.games:
+            game_ids.append(game[0])
+
+        trophies = None
         all_achs = {}
         for game_id in game_ids:
             game_path = self.backend_client.get_game_path(game_id)
 
-            trophies = None
-            trophies = Trophy(self.config, game_path)
-            if trophies:
+            try:
+                trophies = Trophy(self.config, game_path)
                 keys = trophies.tropusr.table6.keys()
 
                 game_achs = []
@@ -155,6 +160,10 @@ class RPCS3Plugin(Plugin):
                     game_achs.append(trophies.trop2ach(key))
 
                 all_achs[game_id] = game_achs
+
+            # Catch when a tropusr object is not created for whatever reason.
+            except AttributeError:
+                pass
 
         return all_achs
 
@@ -208,7 +217,7 @@ class RPCS3Plugin(Plugin):
         await asyncio.sleep(60) 
         loop = asyncio.get_running_loop()
 
-        achs = await loop.run_in_executor(None, self.get_trophy_achs, ['BLUS30313'])
+        achs = await loop.run_in_executor(None, self.get_trophy_achs)
         # for ach in achs:
             # self.unlock_achievement(ach) # TODO - how/when to handle this?
 
