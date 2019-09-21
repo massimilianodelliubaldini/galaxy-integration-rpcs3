@@ -51,6 +51,31 @@ class BackendClient:
         return results
 
 
+    def get_game_path(self, game_id):
+
+        for search in self.config.game_paths:
+            search_dir = self.config.config2path(
+                self.config.main_directory, 
+                search)
+
+            for game in os.listdir(search_dir):
+                game_dir = os.path.join(search_dir, game)
+
+                # Extra folder here.
+                if 'disc' in search:
+                    game_dir = os.path.join(game_dir, 'PS3_GAME')
+
+                # Check that PARAM.SFO exists before loading it.
+                sfo_path = os.path.join(game_dir, 'PARAM.SFO')
+                if os.path.exists(sfo_path):
+                    param_sfo = sfo(sfo_path)
+
+                    # PARAM.SFO is read as a binary file,
+                    # so all keys must also be in binary.
+                    if bytes(game_id, 'utf-8') in param_sfo.params[bytes('TITLE_ID', 'utf-8')]:
+                        return game_dir
+
+
     def get_state_changes(self, old_list, new_list):
         old_dict = {x.game_id: x.local_game_state for x in old_list}
         new_dict = {x.game_id: x.local_game_state for x in new_list}

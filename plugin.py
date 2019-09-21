@@ -6,13 +6,13 @@ import os
 import time
 
 from config import Config
+from trophy import Trophy
 from backend import BackendClient
 from version import get_version
-from devita.sfo import sfo
 
 from galaxy.api.consts import LicenseType, LocalGameState, Platform
 from galaxy.api.plugin import Plugin, create_and_run_plugin
-from galaxy.api.types import Authentication, Game, GameTime, LicenseInfo, LocalGame
+from galaxy.api.types import Authentication, Game, GameTime, LicenseInfo, LocalGame, Achievement
 
 
 class RPCS3Plugin(Plugin):
@@ -26,31 +26,6 @@ class RPCS3Plugin(Plugin):
         self.running_game_id = None
 
 
-    def get_game_path(self, game_id):
-
-        for search in self.config.game_paths:
-            search_dir = self.config.config2path(
-                self.config.main_directory, 
-                search)
-
-            for game in os.listdir(search_dir):
-                game_dir = os.path.join(search_dir, game)
-
-                # Extra folder here.
-                if 'disc' in search:
-                    game_dir = os.path.join(game_dir, 'PS3_GAME')
-
-                # Check that PARAM.SFO exists before loading it.
-                sfo_path = os.path.join(game_dir, 'PARAM.SFO')
-                if os.path.exists(sfo_path):
-                    param_sfo = sfo(sfo_path)
-
-                    # PARAM.SFO is read as a binary file,
-                    # so all keys must also be in binary.
-                    if bytes(game_id, 'utf-8') in param_sfo.params[bytes('TITLE_ID', 'utf-8')]:
-                        return game_dir
-
-
     async def authenticate(self, stored_credentials=None):
         return self.do_auth()
 
@@ -61,12 +36,13 @@ class RPCS3Plugin(Plugin):
 
     def do_auth(self):
 
-        user_path = self.config.config2path(
+        username_path = self.config.config2path(
             self.config.main_directory, 
-            self.config.user_path)
+            self.config.user_path,
+            'localusername')
 
         username = ''
-        with open(user_path) as username_file:
+        with open(username_path) as username_file:
             username = username_file.read()
 
         user_data = {}
@@ -81,10 +57,10 @@ class RPCS3Plugin(Plugin):
 
         rpcs3_exe = self.config.config2path(
             self.config.main_directory,
-            self.config.exe_path)
+            self.config.exe)
 
         eboot_bin = os.path.join(
-            self.get_game_path(game_id),
+            self.backend_client.get_game_path(game_id),
             'USRDIR', 
             'EBOOT.BIN')
 
@@ -111,9 +87,18 @@ class RPCS3Plugin(Plugin):
         return self.get_game_times()
 
 
+    async def prepare_achievements_context(self, game_ids):
+        return self.get_trophy_achs(game_ids)
+
+
     async def get_game_time(self, game_id, context):
         game_time = context.get(game_id)
         return game_time
+
+
+    async def get_unlocked_achievements(self, game_id, context):
+        achs = context.get(game_id)
+        return achs    
 
 
     def get_game_times(self):
@@ -154,16 +139,24 @@ class RPCS3Plugin(Plugin):
 
         return game_times
 
+    def get_trophy_achs(self, game_ids):
 
-    def local_games_list(self):
-        local_games = []
+        all_achs = {}
+        for game_id in game_ids:
+            game_path = self.backend_client.get_game_path(game_id)
 
-        for game in self.games:
-            local_games.append(LocalGame(
-                game[0],
-                LocalGameState.Installed))
+            trophies = None
+            trophies = Trophy(self.config, game_path)
+            if trophies:
+                keys = trophies.tropusr.table6.keys()
 
-        return local_games
+                game_achs = []
+                for key in keys:
+                    game_achs.append(trophies.trop2ach(key))
+
+                all_achs[game_id] = game_achs
+
+        return all_achs
 
 
     def tick(self):
@@ -184,6 +177,7 @@ class RPCS3Plugin(Plugin):
 
         self.create_task(self.update_galaxy_game_times(), 'Update Galaxy game times')
         self.create_task(self.update_local_games(), 'Update local games')
+        self.create_task(self.update_achievements(), 'Update achievements')
 
 
     async def update_local_games(self):
@@ -208,6 +202,17 @@ class RPCS3Plugin(Plugin):
             self.update_game_time(game_time)
 
 
+    async def update_achievements(self):
+
+        # Leave time for Galaxy to fetch games before updating times
+        await asyncio.sleep(60) 
+        loop = asyncio.get_running_loop()
+
+        achs = await loop.run_in_executor(None, self.get_trophy_achs, ['BLUS30313'])
+        # for ach in achs:
+            # self.unlock_achievement(ach) # TODO - how/when to handle this?
+
+
     def update_json_game_time(self, game_id, duration, last_time_played):
 
         # Get the path of the game times file.
@@ -219,7 +224,6 @@ class RPCS3Plugin(Plugin):
             game_times_json = json.load(game_times_file)
 
         old_time_played = game_times_json.get(game_id).get('time_played')
-
         new_time_played = old_time_played + duration
 
         game_times_json[game_id]['time_played'] = new_time_played
@@ -229,6 +233,17 @@ class RPCS3Plugin(Plugin):
             json.dump(game_times_json, game_times_file, indent=4)
 
         self.update_game_time(GameTime(game_id, new_time_played, last_time_played))
+
+
+    def local_games_list(self):
+        local_games = []
+
+        for game in self.games:
+            local_games.append(LocalGame(
+                game[0],
+                LocalGameState.Installed))
+
+        return local_games
 
 
     async def get_owned_games(self):

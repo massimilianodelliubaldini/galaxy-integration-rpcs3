@@ -8,9 +8,9 @@ class Config:
         self.main_directory = 'D:/Files/Repositories/rpcs3/bin/'
 
         # Important subfolders/files, relative to main directory.
-        self.exe_path = 'rpcs3.exe'
-        self.game_paths = ['dev_hdd0/disc', 'dev_hdd0/game']
-        self.user_path = 'dev_hdd0/home/00000001/localusername'
+        self.exe = 'rpcs3.exe'
+        self.game_paths = ['dev_hdd0/disc/', 'dev_hdd0/game/']
+        self.user_path = 'dev_hdd0/home/00000001/'
 
         # Launch without the main RPCS3 window.
         # Turn this off if launching a game through Galaxy does nothing,
