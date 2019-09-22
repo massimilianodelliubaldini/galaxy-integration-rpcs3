@@ -1,7 +1,8 @@
-import json
 import os
 import sys
 import time
+import yaml
+import json
 
 from config import Config
 from devita.sfo import sfo
@@ -20,12 +21,17 @@ class BackendClient:
         # url = 'https://rpcs3.net/compatibility?api=v1&g='
 
         results = []
+        game_paths = []
+        with open(self.config.games_yml) as games_file:
 
-        for search in self.config.game_paths:
-            search_dir = self.config.config2path(
-                self.config.main_directory, 
-                search)
+            games_yml = yaml.load(games_file, Loader=yaml.SafeLoader)
+            for game in games_yml:
+                game_paths.append(games_yml[game])
 
+        game_paths.append(self.config.game_directory)
+
+        # This is probably crazy inefficient.
+        for search_dir in game_paths:
             for root, dirs, files in os.walk(search_dir):
                 for file in files:
                     if file == 'EBOOT.BIN':
@@ -52,28 +58,32 @@ class BackendClient:
 
 
     def get_game_path(self, game_id):
+        
+        with open(self.config.games_yml) as games_file:
+            games_yml = yaml.load(games_file, Loader=yaml.SafeLoader)
+            try:
+                game_path = games_yml[game_id]
+                game_path = os.path.join(game_path, 'PS3_GAME')
+                return game_path
 
-        for search in self.config.game_paths:
-            search_dir = self.config.config2path(
-                self.config.main_directory, 
-                search)
+            # If the game is not found in games.yml, we will search config.game_path.
+            except KeyError:
+                pass
 
-            for game in os.listdir(search_dir):
-                game_dir = os.path.join(search_dir, game)
+        for folder in os.listdir(self.config.game_directory):
+            check_path = os.path.join(self.config.game_directory, folder)
 
-                # Extra folder here.
-                if 'disc' in search:
-                    game_dir = os.path.join(game_dir, 'PS3_GAME')
+            # Check that PARAM.SFO exists before loading it.
+            sfo_path = os.path.join(check_path, 'PARAM.SFO')
+            if os.path.exists(sfo_path):
+                param_sfo = sfo(sfo_path)
 
-                # Check that PARAM.SFO exists before loading it.
-                sfo_path = os.path.join(game_dir, 'PARAM.SFO')
-                if os.path.exists(sfo_path):
-                    param_sfo = sfo(sfo_path)
+                # If PARAM.SFO contains game_id, we found the right path.
+                if bytes(game_id, 'utf-8') in param_sfo.params[bytes('TITLE_ID', 'utf-8')]:
+                    return check_path
 
-                    # PARAM.SFO is read as a binary file,
-                    # so all keys must also be in binary.
-                    if bytes(game_id, 'utf-8') in param_sfo.params[bytes('TITLE_ID', 'utf-8')]:
-                        return game_dir
+        # If we manage to get here, we should really raise an exception.
+        raise FileNotFoundError
 
 
     def get_state_changes(self, old_list, new_list):

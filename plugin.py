@@ -37,13 +37,8 @@ class RPCS3Plugin(Plugin):
 
     def do_auth(self):
 
-        username_path = self.config.config2path(
-            self.config.main_directory, 
-            self.config.user_path,
-            'localusername')
-
         username = ''
-        with open(username_path) as username_file:
+        with open(self.config.localusername, 'r') as username_file:
             username = username_file.read()
 
         user_data = {}
@@ -55,11 +50,6 @@ class RPCS3Plugin(Plugin):
     async def launch_game(self, game_id):
 
         args = []
-
-        rpcs3_exe = self.config.config2path(
-            self.config.main_directory,
-            self.config.exe)
-
         eboot_bin = os.path.join(
             self.backend_client.get_game_path(game_id),
             'USRDIR', 
@@ -68,7 +58,7 @@ class RPCS3Plugin(Plugin):
         if self.config.no_gui:
             args.append('--no-gui')
 
-        command = [rpcs3_exe, eboot_bin] + args
+        command = [self.config.rpcs3_exe, eboot_bin] + args
         self.process = subprocess.Popen(command)
         self.backend_client.start_game_time()
         self.running_game_id = game_id

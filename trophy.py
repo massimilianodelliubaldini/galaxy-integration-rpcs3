@@ -248,17 +248,12 @@ class Trophy:
 
         try:
             self.config = config
-            tropdir_path = os.path.join(game_path, 'TROPDIR')
-            trophies = os.listdir(tropdir_path)[0]
+            tropdir_path = os.path.join(game_path, 'TROPDIR')           
+            game_trophies_id = os.listdir(tropdir_path)[0]
+            game_trophies_path = self.config.self.trophy_directory + game_trophies_id
 
-            trophies_path = self.config.config2path(
-                self.config.main_directory, 
-                self.config.user_path, 
-                'trophy',
-                trophies)
-
-            self.tropconf = TropConf(trophies_path)
-            self.tropusr = TropUsr(trophies_path)
+            self.tropconf = TropConf(game_trophies_path)
+            self.tropusr = TropUsr(game_trophies_path)
 
         # File not found, etc.
         except:

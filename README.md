@@ -4,6 +4,7 @@
 * Finds all Disc and PSN games in the RPCS3 directory.
 * Launches RPCS3 and loads game.
 * Tracks game time.
+* Imports and tracks trophies/achievements (work in progress).
 
 ## Installation
 
@@ -41,16 +42,22 @@ and unpack the contents into `galaxy-integration-rpcs3/devita`.
 
 1. Open `config.py` 
 
-* Set the `main_directory` variable to your RPCS3 installation folder. Use single forward slashes only. No other directories need to be modified.
+* Set the `main_directory` variable to your RPCS3 installation folder. Use single forward slashes only.
 
 * If some games don't launch from Galaxy, try setting `no_gui` to `False`. Some games don't work yet with no GUI in RPCS3.
 
-2. Game-specific launch configuration is handled by RPCS3.
+2. Add your games in RPCS3 (File > Add Games), so that they can be added to the `games.yml` file. Running a game will also add it to this file.
+
+* This plugin reads from that file, so it is important that your games and their install directories end up here.
+
+3. Game-specific launch configuration is handled by RPCS3.
 
 ## Acknowledgements
 
 [AHCoder](https://github.com/AHCoder) - Use of the [PS2 Galaxy plugin](https://github.com/AHCoder/galaxy-integration-ps2) as the basis for this plugin.
 
 [GOG](https://github.com/gogcom) - Use of the [Galaxy Plugin API](https://github.com/gogcom/galaxy-integrations-python-api) provided by GOG.
+
+[RPCS3 Team](https://github.com/RPCS3) - For help with interfacing with the RPCS3 system.
 
 [Marshall Ward](https://github.com/marshallward) - Use of the [SFO Python library](https://github.com/marshallward/devita) to open and read PARAM.SFO files.
