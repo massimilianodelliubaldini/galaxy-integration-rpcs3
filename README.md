@@ -7,13 +7,35 @@
 
 ## Installation
 
-1. Clone this repository to:
-* Windows: `%localappdata%\GOG.com\Galaxy\plugins\installed`
-* macOS: `~/Library/Application Support/GOG.com/Galaxy/plugins/installed`
+### With git (from command line)
 
-2. Rename the folder from `galaxy-integration-rpcs3` to `rpcs3_80F9D16B-5D72-4B95-9D46-2A1EF417C1FC`.
+- Windows: 
+```
+cd %localappdata%\GOG.com\Galaxy\plugins\installed
+git clone https://github.com/mpm11011/galaxy-integration-rpcs3.git
+rename galaxy-integration-rpcs3 rpcs3_80F9D16B-5D72-4B95-9D46-2A1EF417C1FC
+cd rpcs3_80F9D16B-5D72-4B95-9D46-2A1EF417C1FC
+git submodule update --init
+```
+- macOS: 
+```
+cd ~/Library/Application Support/GOG.com/Galaxy/plugins/installed
+git clone https://github.com/mpm11011/galaxy-integration-rpcs3.git
+mv galaxy-integration-rpcs3 rpcs3_80F9D16B-5D72-4B95-9D46-2A1EF417C1FC
+cd rpcs3_80F9D16B-5D72-4B95-9D46-2A1EF417C1FC
+git submodule update --init
+```
 
-3. From the `rpcs3_80F9D16B-5D72-4B95-9D46-2A1EF417C1FC` folder, run the git command `git submodule update --init`.
+### Without git
+
+1. Download a zip of this repository this directory and unpack it in:
+- Windows: `%localappdata%\GOG.com\Galaxy\plugins\installed`
+- macOS: `~/Library/Application Support/GOG.com/Galaxy/plugins/installed`
+
+2. Download a zip of the [devita repository](https://github.com/mpm11011/devita.git) 
+and unpack the contents into `galaxy-integration-rpcs3/devita`.
+
+3. Rename the `galaxy-integration-rpcs3` folder to `rpcs3_80F9D16B-5D72-4B95-9D46-2A1EF417C1FC`.
 
 ## Configuration
 
