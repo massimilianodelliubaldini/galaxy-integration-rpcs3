@@ -26,6 +26,7 @@ If applicable, add screenshots to help explain your problem.
 
 
 **Logs**
-Upload the following logs:
+Upload the following logs and files:
  - `plugin-vision-80F9D16B-5D72-4B95-9D46-2A1EF417C1FC.log`:
  - `GalaxyClient.log`:
+ - `config.py`:
