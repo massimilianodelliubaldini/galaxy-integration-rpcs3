@@ -19,12 +19,16 @@ from galaxy.api.types import Authentication, Game, GameTime, LicenseInfo, LocalG
 class RPCS3Plugin(Plugin):
     def __init__(self, reader, writer, token):
         super().__init__(Platform.ColecoVision, get_version(), reader, writer, token)
-        self.config = Config()
-        self.backend_client = BackendClient(self.config)
-        self.games = []
-        self.local_games_cache = self.local_games_list()
-        self.process = None
-        self.running_game_id = None
+        try:
+            self.config = Config() # If we can't create a good config, we can't run the plugin.
+        except FileNotFoundError:
+            self.close()
+        else:
+            self.backend_client = BackendClient(self.config)
+            self.games = []
+            self.local_games_cache = self.local_games_list()
+            self.process = None
+            self.running_game_id = None
 
 
     async def authenticate(self, stored_credentials=None):
