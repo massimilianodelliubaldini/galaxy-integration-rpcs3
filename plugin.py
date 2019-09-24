@@ -50,7 +50,7 @@ class RPCS3Plugin(Plugin):
     async def launch_game(self, game_id):
 
         args = []
-        eboot_bin = os.path.join(
+        eboot_bin = self.config.joinpath(
             self.backend_client.get_game_path(game_id),
             'USRDIR', 
             'EBOOT.BIN')
@@ -75,7 +75,7 @@ class RPCS3Plugin(Plugin):
 
 
     async def prepare_game_times_context(self, game_ids):
-        return self.get_game_times()
+        return self.get_game_times(game_ids)
 
 
     async def prepare_achievements_context(self, game_ids):
@@ -92,24 +92,19 @@ class RPCS3Plugin(Plugin):
         return achs    
 
 
-    def get_game_times(self):
+    def get_game_times(self, game_ids):
 
         # Get the path of the game times file.
         base_path = os.path.dirname(os.path.realpath(__file__))
-        game_times_path = '{}/game_times.json'.format(base_path)
+        game_times_path = os.path.join(base_path, 'game_times.json')
         game_times = {}
 
         # If the file does not exist, create it with default values.
         if not os.path.exists(game_times_path):
             for game in self.games:
 
-                game_time = {}
                 game_id = str(game[0])
-                game_time['name'] = game[1]
-                game_time['time_played'] = 0
-                game_time['last_time_played'] = None
-
-                game_times[game_id] = game_time
+                game_times[game_id] = GameTime(game_id, 0, None)
 
             with open(game_times_path, 'w', encoding='utf-8') as game_times_file:
                 json.dump(game_times, game_times_file, indent=4)
@@ -118,15 +113,12 @@ class RPCS3Plugin(Plugin):
         with open(game_times_path, 'r', encoding='utf-8') as game_times_file:
             game_times_json = json.load(game_times_file)
 
-            for game_time in game_times_json:
+            for game_id in game_times_json:
+                if game_id in game_ids:
+                    time_played = game_times_json.get(game_id).get('time_played')
+                    last_time_played = game_times_json.get(game_id).get('last_time_played')
 
-                # Each entry is actually the game ID.
-                game_id = game_time
-
-                time_played = game_times_json.get(game_time).get('time_played')
-                last_time_played = game_times_json.get(game_time).get('last_time_played')
-                
-                game_times[game_id] = GameTime(game_id, time_played, last_time_played)
+                    game_times[game_id] = GameTime(game_id, time_played, last_time_played)
 
         return game_times
 
@@ -147,13 +139,15 @@ class RPCS3Plugin(Plugin):
 
                 game_achs = []
                 for key in keys:
-                    game_achs.append(trophies.trop2ach(key))
+                    ach = trophies.trop2ach(key)
+                    if ach is not None:
+                        game_achs.append(trophies.trop2ach(key))
 
                 all_achs[game_id] = game_achs
 
-            # Catch when a tropusr object is not created for whatever reason.
+            # If tropusr doesn't exist, this game has no trophies.
             except AttributeError:
-                pass
+                all_achs[game_id] = []
 
         return all_achs
 
@@ -167,6 +161,9 @@ class RPCS3Plugin(Plugin):
                     self.running_game_id,
                     self.backend_client.get_session_duration(),
                     int(time.time()))
+    
+                # Only update recently played games. Updating all game times every second fills up log way too quickly.
+                self.create_task(self.update_galaxy_game_times(self.running_game_id), 'Update Galaxy game times')
 
                 self.process = None
                 self.running_game_id = None
@@ -174,7 +171,6 @@ class RPCS3Plugin(Plugin):
         except AttributeError:
             pass
 
-        self.create_task(self.update_galaxy_game_times(), 'Update Galaxy game times')
         self.create_task(self.update_local_games(), 'Update local games')
         self.create_task(self.update_achievements(), 'Update achievements')
 
@@ -190,15 +186,15 @@ class RPCS3Plugin(Plugin):
             self.update_local_game_status(local_game_notify)
 
 
-    async def update_galaxy_game_times(self):
+    async def update_galaxy_game_times(self, game_id):
 
         # Leave time for Galaxy to fetch games before updating times
         await asyncio.sleep(60) 
         loop = asyncio.get_running_loop()
 
-        game_times = await loop.run_in_executor(None, self.get_game_times)
-        for game_time in game_times:
-            self.update_game_time(game_time)
+        game_times = await loop.run_in_executor(None, self.get_game_times, [game_id])
+        for game_id in game_times:
+            self.update_game_time(game_times[game_id])
 
 
     async def update_achievements(self):

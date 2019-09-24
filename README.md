@@ -1,10 +1,14 @@
 # GOG Galaxy 2.0 Integration with RPCS3
 
 ## Supported Features
-* Finds all Disc and PSN games in the RPCS3 directory.
-* Launches RPCS3 and loads game.
+* Finds all Disc and PSN games known to RPCS3.
+* Launches RPCS3 and loads games.
 * Tracks game time.
-* Imports and tracks trophies/achievements (work in progress).
+* Imports and tracks trophies/achievements.
+
+## Prerequisites
+
+* [RPCS3 v0.0.7](https://rpcs3.net/) or later
 
 ## Installation
 
@@ -61,3 +65,5 @@ and unpack the contents into `galaxy-integration-rpcs3/devita`.
 [RPCS3 Team](https://github.com/RPCS3) - For help with interfacing with the RPCS3 system.
 
 [Marshall Ward](https://github.com/marshallward) - Use of the [SFO Python library](https://github.com/marshallward/devita) to open and read PARAM.SFO files.
+
+Thank you!

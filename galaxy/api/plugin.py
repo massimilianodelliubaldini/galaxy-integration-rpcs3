@@ -174,7 +174,6 @@ class Plugin:
     async def run(self):
         """Plugin's main coroutine."""
         await self._server.run()
-        await self._external_task_manager.wait()
 
     def close(self) -> None:
         if not self._active:
@@ -332,10 +331,7 @@ class Plugin:
     def _game_achievements_import_failure(self, game_id: str, error: ApplicationError) -> None:
         params = {
             "game_id": game_id,
-            "error": {
-                "code": error.code,
-                "message": error.message
-            }
+            "error": error.json()
         }
         self._notification_client.notify("game_achievements_import_failure", params)
 
@@ -399,10 +395,7 @@ class Plugin:
     def _game_time_import_failure(self, game_id: str, error: ApplicationError) -> None:
         params = {
             "game_id": game_id,
-            "error": {
-                "code": error.code,
-                "message": error.message
-            }
+            "error": error.json()
         }
         self._notification_client.notify("game_time_import_failure", params)
 

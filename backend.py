@@ -38,7 +38,7 @@ class BackendClient:
 
                         # Search for EBOOT.BIN to find actual games,
                         # then PARAM.SFO is one level up from EBOOT.BIN.
-                        bin_path = os.path.join(root, file)
+                        bin_path = self.config.joinpath(root, file)
                         sfo_path = bin_path.replace(
                             os.path.join('USRDIR', 'EBOOT.BIN'), 
                             'PARAM.SFO')
@@ -63,7 +63,7 @@ class BackendClient:
             games_yml = yaml.load(games_file, Loader=yaml.SafeLoader)
             try:
                 game_path = games_yml[game_id]
-                game_path = os.path.join(game_path, 'PS3_GAME')
+                game_path = self.config.joinpath(game_path, 'PS3_GAME')
                 return game_path
 
             # If the game is not found in games.yml, we will search config.game_path.
@@ -71,10 +71,10 @@ class BackendClient:
                 pass
 
         for folder in os.listdir(self.config.game_directory):
-            check_path = os.path.join(self.config.game_directory, folder)
+            check_path = self.config.joinpath(self.config.game_directory, folder)
 
             # Check that PARAM.SFO exists before loading it.
-            sfo_path = os.path.join(check_path, 'PARAM.SFO')
+            sfo_path = self.config.joinpath(check_path, 'PARAM.SFO')
             if os.path.exists(sfo_path):
                 param_sfo = sfo(sfo_path)
 

@@ -31,8 +31,8 @@ class Config:
         self.trophy_directory = self.user_directory + 'trophy/'
         self.localusername = self.user_directory + 'localusername'
 
-    # Normalizes and joins paths from config.
-    def config2path(self, path, *paths):
+    # Normalizes and joins paths for OS file handling.
+    def joinpath(self, path, *paths):
         return os.path.normpath(os.path.join(path, *paths))
 
     # Find dev_hdd0 from config.yml.

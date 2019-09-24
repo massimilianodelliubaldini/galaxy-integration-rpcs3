@@ -248,9 +248,12 @@ class Trophy:
 
         try:
             self.config = config
-            tropdir_path = os.path.join(game_path, 'TROPDIR')           
+            tropdir_path = self.config.joinpath(game_path, 'TROPDIR')
             game_trophies_id = os.listdir(tropdir_path)[0]
-            game_trophies_path = self.config.self.trophy_directory + game_trophies_id
+
+            game_trophies_path = self.config.joinpath(
+                self.config.trophy_directory,
+                game_trophies_id)
 
             self.tropconf = TropConf(game_trophies_path)
             self.tropusr = TropUsr(game_trophies_path)
@@ -265,13 +268,14 @@ class Trophy:
         trophy_state = self.tropusr.table6[trophy_id].trophy_state
         unlocked = int.from_bytes(trophy_state, byteorder='big')
 
-        unlock_time = None
         if bool(unlocked):
             unlock_timestamp = self.tropusr.table6[trophy_id].timestamp2
             unlock_time = int.from_bytes(unlock_timestamp, byteorder='big')
         
-        pad_tid = format(trophy_id, '03d')
-        name = self.tropconf.root.find('.//trophy[@id="' + pad_tid + '"]/name')
+            pad_tid = format(trophy_id, '03d')
+            name = self.tropconf.root.find('.//trophy[@id="' + pad_tid + '"]/name')
 
-        ach = Achievement(unlock_time, None, name.text)
-        return ach
+            ach = Achievement(unlock_time, None, name.text)
+            return ach
+        else:
+            return None
