@@ -60,7 +60,9 @@ class Config:
 
             # I think it's a safe guess to call this main_directory.
             if '$(EmulatorDir)' in hdd0:
-                hdd0 = hdd0.replace('$(EmulatorDir)', self.main_directory)
+                hdd0 = self.joinpath(
+                    self.main_directory, 
+                    hdd0.replace('$(EmulatorDir)', ''))
 
         return hdd0
 
