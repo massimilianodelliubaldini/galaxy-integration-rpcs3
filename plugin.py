@@ -114,10 +114,17 @@ class RPCS3Plugin(Plugin):
         if not os.path.exists(game_times_path):
             for game in self.games:
 
-                # Make element at [game_id] a dictionary of game_time's properties.
+                # Make element at [game_id] a dictionary of GameTime's properties.
+                # Include the name so users can read each entry.
                 game_id = str(game[0])
-                game_time = GameTime(game_id, 0, None)
-                game_times[game_id] = vars(game_time)
+                game_name = str(game[1])
+
+                entry = {}
+                entry['name'] = game_name
+                entry['time_played'] = 0
+                entry['last_time_played'] = None
+                
+                game_times[game_id] = entry
 
             with open(game_times_path, 'w', encoding='utf-8') as game_times_file:
                 json.dump(game_times, game_times_file, indent=4)
@@ -176,10 +183,17 @@ class RPCS3Plugin(Plugin):
         if not os.path.exists(game_settings_path):
             for game in self.games:
 
-                # Make element at [game_id] a dictionary of game_setting's properties.
+                # Make element at [game_id] a dictionary of GameLibrarySettings's properties.
+                # Include the name so users can read each entry.
                 game_id = str(game[0])
-                game_setting = GameLibrarySettings(game_id, [], False)
-                game_settings[game_id] = vars(game_setting)
+                game_name = str(game[1])
+                
+                entry = {}
+                entry['name'] = game_name
+                entry['tags'] = []
+                entry['hidden'] = False
+
+                game_settings[game_id] = entry
 
             with open(game_settings_path, 'w', encoding='utf-8') as game_settings_file:
                 json.dump(game_settings, game_settings_file, indent=4)
@@ -258,7 +272,7 @@ class RPCS3Plugin(Plugin):
 
         # Get the path of the game times file.
         base_path = os.path.dirname(os.path.realpath(__file__))
-        game_times_path = '{}/game_times.json'.format(base_path)
+        game_times_path = os.path.join(base_path, 'game_times.json')
         game_times_json = None
 
         with open(game_times_path, 'r', encoding='utf-8') as game_times_file:
