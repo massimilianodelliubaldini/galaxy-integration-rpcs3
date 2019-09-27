@@ -5,15 +5,14 @@ import sys
 import os
 import time
 
-import trophy
-from trophy import Trophy
+from trophy import *
 from config import Config
 from backend import BackendClient
 from version import get_version
 
 from galaxy.api.consts import LicenseType, LocalGameState, Platform
 from galaxy.api.plugin import Plugin, create_and_run_plugin
-from galaxy.api.types import Authentication, Game, GameTime, LicenseInfo, LocalGame, Achievement
+from galaxy.api.types import Authentication, Game, GameTime, LicenseInfo, LocalGame, Achievement, GameLibrarySettings
 
 
 class RPCS3Plugin(Plugin):
@@ -86,6 +85,10 @@ class RPCS3Plugin(Plugin):
         return self.get_trophy_achs()
 
 
+    async def prepare_game_library_settings_context(self, game_ids):
+        return self.get_game_settings(game_ids)
+
+
     async def get_game_time(self, game_id, context):
         game_time = context.get(game_id)
         return game_time
@@ -95,6 +98,10 @@ class RPCS3Plugin(Plugin):
         achs = context.get(game_id)
         return achs    
 
+
+    async def get_game_library_settings(self, game_id, context):
+        sets = context.get(game_id)
+        return sets
 
     def get_game_times(self, game_ids):
 
@@ -107,8 +114,10 @@ class RPCS3Plugin(Plugin):
         if not os.path.exists(game_times_path):
             for game in self.games:
 
+                # Make element at [game_id] a dictionary of game_time's properties.
                 game_id = str(game[0])
-                game_times[game_id] = GameTime(game_id, 0, None)
+                game_time = GameTime(game_id, 0, None)
+                game_times[game_id] = vars(game_time)
 
             with open(game_times_path, 'w', encoding='utf-8') as game_times_file:
                 json.dump(game_times, game_times_file, indent=4)
@@ -154,6 +163,39 @@ class RPCS3Plugin(Plugin):
                 all_achs[game_id] = []
 
         return all_achs
+
+
+    def get_game_settings(self, game_ids):
+
+        # Get the path of the game settings file.
+        base_path = os.path.dirname(os.path.realpath(__file__))
+        game_settings_path = os.path.join(base_path, 'game_settings.json')
+        game_settings = {}
+
+        # If the file does not exist, create it with default values.
+        if not os.path.exists(game_settings_path):
+            for game in self.games:
+
+                # Make element at [game_id] a dictionary of game_setting's properties.
+                game_id = str(game[0])
+                game_setting = GameLibrarySettings(game_id, [], False)
+                game_settings[game_id] = vars(game_setting)
+
+            with open(game_settings_path, 'w', encoding='utf-8') as game_settings_file:
+                json.dump(game_settings, game_settings_file, indent=4)
+
+        # If (when) the file exists, read it and return the game settings.  
+        with open(game_settings_path, 'r', encoding='utf-8') as game_settings_file:
+            game_settings_json = json.load(game_settings_file)
+
+            for game_id in game_settings_json:
+                if game_id in game_ids:
+                    tags = game_settings_json.get(game_id).get('tags')
+                    hidden = game_settings_json.get(game_id).get('hidden')
+
+                    game_settings[game_id] = GameLibrarySettings(game_id, tags, hidden)
+
+        return game_settings
 
 
     def tick(self):
