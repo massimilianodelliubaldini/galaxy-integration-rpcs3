@@ -25,8 +25,9 @@ class BackendClient:
         with open(self.config.games_yml) as games_file:
 
             games_yml = yaml.load(games_file, Loader=yaml.SafeLoader)
-            for game in games_yml:
-                game_paths.append(games_yml[game])
+            if games_yml:
+                for game in games_yml:
+                    game_paths.append(games_yml[game])
 
         game_paths.append(self.config.game_directory)
 
@@ -61,14 +62,15 @@ class BackendClient:
         
         with open(self.config.games_yml) as games_file:
             games_yml = yaml.load(games_file, Loader=yaml.SafeLoader)
-            try:
-                game_path = games_yml[game_id]
-                game_path = self.config.joinpath(game_path, 'PS3_GAME')
-                return game_path
+            if games_yml:
+                try:
+                    game_path = games_yml[game_id]
+                    game_path = self.config.joinpath(game_path, 'PS3_GAME')
+                    return game_path
 
-            # If the game is not found in games.yml, we will search config.game_path.
-            except KeyError:
-                pass
+                # If the game is not found in games.yml, we will search config.game_path.
+                except KeyError:
+                    pass
 
         for folder in os.listdir(self.config.game_directory):
             check_path = self.config.joinpath(self.config.game_directory, folder)

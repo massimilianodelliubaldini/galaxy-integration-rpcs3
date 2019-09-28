@@ -2,7 +2,7 @@
     "name": "Galaxy RPCS3 Plugin",
     "platform": "vision",
     "guid": "80F9D16B-5D72-4B95-9D46-2A1EF417C1FC",
-    "version": "0.62",
+    "version": "0.63",
     "description": "GOG Galaxy Integration with RPCS3 Emulator",
     "author": "mpm11011",
     "email": "markuscicero5@gmail.com",
