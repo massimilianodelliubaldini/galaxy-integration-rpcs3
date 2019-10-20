@@ -54,7 +54,19 @@ and unpack the contents into `galaxy-integration-rpcs3/devita`.
 
 * This plugin reads from that file, so it is important that your games and their install directories end up here.
 
-3. Game-specific launch configuration is handled by RPCS3.
+* Game-specific launch configuration is handled by RPCS3.
+
+3. (Optional) Open `game_settings.json` (if it does not exist, it will be created after importing games for the first time)
+
+* Each tag you enter should be inside the brackets, surrounded by double quotes, and separated by commas. You can also leave it empty. Here's an example:
+
+```
+    "BCUS98137": {
+        "name": "MotorStorm™",
+        "tags": ["racing", "soundtrack", "destruction"],
+        "hidden": false
+    },
+```
 
 ## Acknowledgements
 

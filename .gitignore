@@ -3,3 +3,4 @@ __pycache__
 
 *.lnk
 game_times.json
+game_settings.json

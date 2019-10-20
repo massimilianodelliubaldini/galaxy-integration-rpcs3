@@ -46,6 +46,9 @@ class Config:
         self.trophy_directory = self.joinpath(self.user_directory, 'trophy')
         self.localusername = self.joinpath(self.user_directory, 'localusername')
 
+        # Might as well check this too.
+        self.check_files([self.localusername])
+
     # Normalizes and joins paths for OS file handling.
     def joinpath(self, path, *paths):
         return os.path.normpath(os.path.join(path, *paths))
