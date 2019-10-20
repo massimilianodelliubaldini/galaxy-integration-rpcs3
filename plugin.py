@@ -217,13 +217,17 @@ class RPCS3Plugin(Plugin):
             if self.process.poll() is not None:
 
                 self.backend_client.end_game_time()
-                self.update_json_game_time(
-                    self.running_game_id,
-                    self.backend_client.get_session_duration(),
-                    int(time.time()))
+
+                # Update game_times.json.
+                self.create_task(
+                    self.update_json_game_time(
+                        self.running_game_id, 
+                        self.backend_client.get_session_duration(), 
+                        int(time.time())), 
+                    'Update JSON game times')
     
                 # Only update recently played games. Updating all game times every second fills up log way too quickly.
-                self.create_task(self.update_galaxy_game_times(self.running_game_id), 'Update Galaxy game times')
+                self.create_task(self.update_galaxy_game_time(self.running_game_id), 'Update Galaxy game times')
 
                 self.process = None
                 self.running_game_id = None
@@ -233,6 +237,7 @@ class RPCS3Plugin(Plugin):
 
         self.create_task(self.update_local_games(), 'Update local games')
         self.create_task(self.update_achievements(), 'Update achievements')
+        self.create_task(self.update_json_library_settings(), 'Update game library settings')
 
 
     async def update_local_games(self):
@@ -246,7 +251,7 @@ class RPCS3Plugin(Plugin):
             self.update_local_game_status(local_game_notify)
 
 
-    async def update_galaxy_game_times(self, game_id):
+    async def update_galaxy_game_time(self, game_id):
 
         # Leave time for Galaxy to fetch games before updating times
         await asyncio.sleep(60) 
@@ -268,7 +273,7 @@ class RPCS3Plugin(Plugin):
             # self.unlock_achievement(ach) # TODO - how/when to handle this?
 
 
-    def update_json_game_time(self, game_id, duration, last_time_played):
+    async def update_json_game_time(self, game_id, duration, last_time_played):
 
         # Get the path of the game times file.
         base_path = os.path.dirname(os.path.realpath(__file__))
@@ -286,6 +291,35 @@ class RPCS3Plugin(Plugin):
 
         with open(game_times_path, 'w', encoding='utf-8') as game_times_file:
             json.dump(game_times_json, game_times_file, indent=4)
+
+        self.update_game_time(GameTime(game_id, new_time_played, last_time_played))
+
+
+    async def update_json_library_settings(self):
+
+        # Get the path of the game settings file.
+        base_path = os.path.dirname(os.path.realpath(__file__))
+        game_settings_path = os.path.join(base_path, 'game_settings.json')
+        game_settings_json = None
+
+        with open(game_settings_path, 'r', encoding='utf-8') as game_settings_file:
+            game_settings_json = json.load(game_settings_file)
+
+        for game in self.games:
+
+            game_id = str(game[0])
+            game_name = str(game[1])
+
+            old_tags = game_settings_json.get(game_id).get('tags')
+            
+            # TODO - There's no "game_library_settings_updated" 
+            # notification to get a set of updated tags or hidden flag.
+
+            game_settings_json[game_id]['tags'] = new_tags
+            game_settings_json[game_id]['hidden'] = new_hidden_flag
+
+        with open(game_settings_path, 'w', encoding='utf-8') as game_settings_file:
+            json.dump(game_settings_json, game_settings_file, indent=4)
 
         self.update_game_time(GameTime(game_id, new_time_played, last_time_played))
 
