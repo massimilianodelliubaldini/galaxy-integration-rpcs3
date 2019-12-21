@@ -44,6 +44,8 @@ from galaxy.api.errors import (
 )
 
 
+logger = logging.getLogger(__name__)
+
 #: Default limit of the simultaneous connections for ssl connector.
 DEFAULT_LIMIT = 20
 #: Default timeout in seconds used for client session.
@@ -78,7 +80,8 @@ def create_tcp_connector(*args, **kwargs) -> aiohttp.TCPConnector:
     ssl_context.load_verify_locations(certifi.where())
     kwargs.setdefault("ssl", ssl_context)
     kwargs.setdefault("limit", DEFAULT_LIMIT)
-    return aiohttp.TCPConnector(*args, **kwargs)  # type: ignore due to https://github.com/python/mypy/issues/4001
+    # due to https://github.com/python/mypy/issues/4001
+    return aiohttp.TCPConnector(*args, **kwargs)  # type: ignore
 
 
 def create_client_session(*args, **kwargs) -> aiohttp.ClientSession:
@@ -103,7 +106,8 @@ def create_client_session(*args, **kwargs) -> aiohttp.ClientSession:
     kwargs.setdefault("connector", create_tcp_connector())
     kwargs.setdefault("timeout", aiohttp.ClientTimeout(total=DEFAULT_TIMEOUT))
     kwargs.setdefault("raise_for_status", True)
-    return aiohttp.ClientSession(*args, **kwargs)  # type: ignore due to https://github.com/python/mypy/issues/4001
+    # due to https://github.com/python/mypy/issues/4001
+    return aiohttp.ClientSession(*args, **kwargs)  # type: ignore
 
 
 @contextmanager
@@ -134,11 +138,11 @@ def handle_exception():
         if error.status >= 500:
             raise BackendError()
         if error.status >= 400:
-            logging.warning(
+            logger.warning(
                 "Got status %d while performing %s request for %s",
                 error.status, error.request_info.method, str(error.request_info.url)
             )
             raise UnknownError()
     except aiohttp.ClientError:
-        logging.exception("Caught exception while performing request")
+        logger.exception("Caught exception while performing request")
         raise UnknownError()
