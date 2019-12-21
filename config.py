@@ -6,21 +6,14 @@ import logging
 class Config:
     def __init__(self):
 
-        # Point this to the RPCS3 install directory.
-        # Use single forward slashes only, like below.
-        self.main_directory = 'D:/Files/Repositories/rpcs3/bin/'
+        # Before anything else, get the user config file and check that its valid.
+        base_path = os.path.dirname(os.path.realpath(__file__))
+        self.user_config_yml = self.joinpath(base_path, 'user_config.yml')
+        self.check_files([self.user_config_yml])
 
-        # Launch without the main RPCS3 window.
-        # Turn this off if launching a game through Galaxy does nothing,
-        # as some games don't work without the main window. 
-        self.no_gui = True
-
-        # You should not have to modify anything beyond this point.
-
-
-
-        # Just in case...
-        self.main_directory = os.path.normpath(self.main_directory)
+        # Now start getting the user configured values. Normpath main_directory just in case...
+        self.main_directory = os.path.normpath(self.get_config_value('main_directory'))
+        self.no_gui = self.get_config_value('no_gui')
 
         # Important files that should be in main_directory.
         self.rpcs3_exe = self.joinpath(self.main_directory, 'rpcs3.exe')
@@ -50,13 +43,40 @@ class Config:
     def joinpath(self, path, *paths):
         return os.path.normpath(os.path.join(path, *paths))
 
+    # Grab the user config value for a given key.
+    def get_config_value(self, key):
+        if os.path.exists(self.user_config_yml):
+            with open(self.user_config_yml, 'r') as user_config_file:
+
+                user_config = yaml.load(user_config_file, Loader=yaml.SafeLoader)
+                if user_config:
+                    try:
+                        return user_config[key]
+                    except KeyError:
+                        logging.error(key + ' value not found in user_config.yml.')
+                        raise KeyError()
+                else:
+                    logging.error('user_config.yml is empty.')
+                    raise OSError()
+        else:
+            logging.error('user_config.yml not found.')
+            raise OSError()
+
     # Find dev_hdd0 from config.yml.
     def find_hdd0(self):
         hdd0 = None
         with open(self.config_yml, 'r') as config_file:
 
             config = yaml.load(config_file, Loader=yaml.SafeLoader)
-            hdd0 = config['VFS']['/dev_hdd0/']
+            if config:
+                try:
+                    hdd0 = config['VFS']['/dev_hdd0/']
+                except KeyError:
+                    logging.error('hdd0 location not found in config.yml.')
+                    raise KeyError()
+            else:
+                logging.error('config.yml is empty.')
+                raise OSError()
 
             # I think it's a safe guess to call this main_directory.
             if '$(EmulatorDir)' in hdd0:
@@ -66,15 +86,21 @@ class Config:
 
         return hdd0
 
-    # Raises exception if required files don't exist.
+    # Raises exception if required files have some problem.
     def check_files(self, files):
         should_raise = False
 
         for file in files:
             filepath = os.path.normpath(file)
+
             if not os.path.exists(filepath):
-                logging.error(filepath + ' not found in RPCS3 directory.')
+                logging.error(filepath + ' not found.')
                 should_raise = True
 
+            elif os.stat(filepath).st_size == 0:
+                logging.error(filepath + ' is empty.')
+                should_raise = True
+
+        # Log all the errors first before blowing up.
         if should_raise:
-            raise FileNotFoundError()
+            raise OSError()

@@ -1,0 +1,8 @@
+# Point this to the RPCS3 install directory.
+# Use single forward slashes only, like below.
+main_directory: D:/Files/Repositories/rpcs3/bin/
+
+# Launch without the main RPCS3 window.
+# Turn this off if launching a game through Galaxy does nothing,
+# as some games don't work without the main window. 
+no_gui: True
