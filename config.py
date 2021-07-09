@@ -26,6 +26,7 @@ class Config:
         self.rpcs3_exe = self.joinpath(self.main_directory, 'rpcs3.exe')
         self.games_yml = self.joinpath(self.main_directory, 'games.yml')
         self.config_yml = self.joinpath(self.main_directory, 'config.yml')
+        self.game_time = self.joinpath(self.main_directory, './GuiConfigs/persistent_settings.dat')
 
         # Make sure these exist!
         self.check_files([
