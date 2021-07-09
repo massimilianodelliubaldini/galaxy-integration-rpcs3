@@ -1,6 +1,5 @@
 import os
 import sys
-import time
 import yaml
 import json
 
@@ -10,9 +9,6 @@ from devita.sfo import sfo
 class BackendClient:
     def __init__(self, config):
         self.config = config
-        self.start_time = 0
-        self.end_time = 0
-
 
     # Returns an array of Title ID, Title pairs.
     def get_games(self):
@@ -103,17 +99,3 @@ class BackendClient:
         result.extend(LocalGame(id, new_dict[id]) for id in new_dict.keys() & old_dict.keys() if new_dict[id] != old_dict[id])
         
         return result
-
-
-    def start_game_time(self):
-        self.start_time = time.time()
-
-
-    def end_game_time(self):
-        self.end_time = time.time()
-
-
-    def get_session_duration(self):
-        delta = self.end_time - self.start_time
-        minutes = int(round(delta / 60))
-        return minutes
